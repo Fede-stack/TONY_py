@@ -5,17 +5,18 @@ from dataclasses import dataclass
 from enum import Enum
 from collections import Counter
 import string
+from wordfreq import word_frequency
 import spacy
-from collections import Counter
 from nrclex import NRCLex
-from typing import Dict
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
 nltk.download('punkt_tab')
 nltk.download('vader_lexicon', quiet=True)
-import spacy
-from typing import Dict
+
+# FIX: caricamento del modello spaCy una sola volta a livello di modulo
 nlp = spacy.load("en_core_web_sm")
+
 
 class MentalHealthCondition(Enum):
     """Enumeration of supported mental health conditions"""
@@ -29,6 +30,7 @@ class MentalHealthCondition(Enum):
     STRESS = "stress"
     SUICIDE_RISK = "suicide_risk"
     OCD = "ocd"
+
 
 @dataclass
 class LinguisticMarkers:
@@ -71,6 +73,7 @@ class LinguisticMarkers:
     graph_connectedness: Optional[float] = None
     semantic_coherence: Optional[float] = None
 
+
 class LexiconLevelFeatures:
     """
     Class for extracting linguistic markers for various mental health conditions.
@@ -90,6 +93,13 @@ class LexiconLevelFeatures:
         self.language = language
         self.condition_specific_markers = self._initialize_condition_markers()
         self._load_lexicons()
+        # FIX: pre-calcolo dei lemma-set per i processi cognitivi e sociali,
+        # spostato qui da _extract_cognitive_processes / _extract_social_processes
+        self._insight_lemmas = set(self.insight_words)
+        self._causation_lemmas = set(self.causation_words)
+        self._certainty_lemmas = set(self.certainty_words)
+        self._tentative_lemmas = set(self.tentative_words)
+        self._social_lemmas = set(self.social_words)
 
     def _load_lexicons(self):
         """Load linguistic lexicons and dictionaries for marker extraction"""
@@ -183,12 +193,14 @@ class LexiconLevelFeatures:
         # Social process words (reduced in depression)
         self.social_words = {
             'talk', 'share', 'friend', 'family', 'people', 'together',
-            'social', 'community', 'relationship', 'connect', 'meet', 'girlfriend', 'boyfriend'
+            'social', 'community', 'relationship', 'connect', 'meet',
+            'girlfriend', 'boyfriend'
         }
 
         # Temporal markers
         self.past_tense_markers = {
-            'was', 'were', 'had', 'did', 'been', 'ed'  # simplified
+            'was', 'were', 'had', 'did', 'been'
+            # FIX: rimosso 'ed' — non è un token valido come parola intera
         }
 
         self.future_tense_markers = {
@@ -252,10 +264,15 @@ class LexiconLevelFeatures:
                 "hopelessness_markers", "death_related_words", "isolation_language",
                 "burden_perception", "lack_of_future_references"
             ],
+            # FIX: aggiunta voce mancante per OCD (era definita nell'enum ma non qui)
+            MentalHealthCondition.OCD: [
+                "repetitive_language", "certainty_words", "absolutist_words",
+                "cognitive_processes_high", "negation_frequency"
+            ],
         }
 
     def extract_markers(self, text: str,
-                       condition: Optional[MentalHealthCondition] = None) -> LinguisticMarkers:
+                        condition: Optional[MentalHealthCondition] = None) -> LinguisticMarkers:
         """
         Extract linguistic markers from text.
 
@@ -290,9 +307,9 @@ class LexiconLevelFeatures:
         )
 
         # Add specific markers for schizophrenia/psychosis
-        if condition in [MentalHealthCondition.SCHIZOPHRENIA]:
-            markers.graph_connectedness = self._compute_graph_connectedness(text)
-            markers.semantic_coherence = self._compute_semantic_coherence(text)
+        
+        markers.graph_connectedness = self._compute_graph_connectedness(text)
+        markers.semantic_coherence = self._compute_semantic_coherence(text)
 
         return markers
 
@@ -301,18 +318,16 @@ class LexiconLevelFeatures:
         text = text.lower()
         text = re.sub(f'[{re.escape(string.punctuation)}]', ' ', text)
         words = text.split()
-
         return [w for w in words if w]
 
     def _lemmatize_words(self, text: str) -> List[str]:
-        """Return list of lemmatized, lowercase, alphabetic tokens."""
-        nlp = spacy.load("en_core_web_sm")
+        """Return list of lemmatized, lowercase, alphabetic tokens.
+        """
         doc = nlp(text)
         return [t.lemma_.lower() for t in doc if t.is_alpha]
 
     def _get_sentences(self, text: str) -> List[str]:
         """Split text into sentences"""
-        # Simple sentence splitting (could use nltk.sent_tokenize for better results)
         sentences = re.split(r'[.!?]+', text)
         return [s.strip() for s in sentences if s.strip()]
 
@@ -328,33 +343,29 @@ class LexiconLevelFeatures:
         unique_words = len(set(words))
         total_words = len(words)
 
-        # Type-Token Ratio
         ttr = unique_words / total_words
-
         return ttr
 
-    def _compute_lexical_sophistication(self, text: str, reference_freq: dict = None) -> float:
+    def _compute_lexical_sophistication(self, text: str) -> Dict[str, float]:
         """
-        Compute lexical sophistication using average inverse log frequency.
-        Inspired by Kyle & Crossley (2015, TAALES framework).
+        Compute lexical sophistication using wordfreq.
+        Returns the mean and standard deviation of word frequencies across the text.
+
+        Returns:
+            Dict with 'mean_frequency' and 'std_frequency'.
         """
+        from wordfreq import word_frequency
+
         words = self._tokenize(text)
         if not words:
-            return 0.0
+            return {"mean_frequency": 0.0, "std_frequency": 0.0}
 
-        # Se non viene fornito un dizionario di frequenze, usa frequenze di default
-        if reference_freq is None:
-            # Opzione 1: usa una frequenza uniforme
-            freqs = [1e-3 for _ in words]
-        else:
-            # Opzione 2: usa il dizionario fornito
-            freqs = [reference_freq.get(w, 1e-6) for w in words]
+        freqs = np.array([word_frequency(w, self.language) for w in words])
 
-        inv_log_freqs = [-np.log10(f) for f in freqs]
-        sophistication = float(np.mean(inv_log_freqs))
-        return round(sophistication, 4)
-
-
+        return {
+            "mean_frequency": round(float(np.mean(freqs)), 6),
+            "std_frequency":  round(float(np.std(freqs)), 6),
+        }
 
     def _compute_word_prevalence(self, text: str) -> float:
         """
@@ -365,17 +376,16 @@ class LexiconLevelFeatures:
         if not words:
             return 0.0
 
-        # Simplified: count words in our lexicons (more common words)
-        common_word_count = sum(1 for word in words
-                               if word in self.first_person_pronouns
-                               or word in self.second_person_pronouns
-                               or word in self.third_person_pronouns
-                               or word in self.coordinators
-                               or word in self.subordinators)
+        common_word_count = sum(
+            1 for word in words
+            if word in self.first_person_pronouns
+            or word in self.second_person_pronouns
+            or word in self.third_person_pronouns
+            or word in self.coordinators
+            or word in self.subordinators
+        )
 
-        prevalence = common_word_count / len(words)
-
-        return prevalence
+        return common_word_count / len(words)
 
     def _compute_sentence_complexity(self, text: str) -> float:
         """
@@ -392,40 +402,30 @@ class LexiconLevelFeatures:
             if not words:
                 continue
 
-            # Count subordinators and coordinators
             subordination_count = sum(1 for w in words if w in self.subordinators)
             coordination_count = sum(1 for w in words if w in self.coordinators)
 
-            # Complexity score based on clauses
             complexity = (subordination_count * 2 + coordination_count) / len(words)
             complexities.append(complexity)
 
         return np.mean(complexities) if complexities else 0.0
 
     def _compute_subordination_rate(self, text: str) -> float:
-        """
-        Compute rate of subordinate clauses.
-        Indicates complex sentence structure.
-        """
+        """Compute rate of subordinate clauses."""
         words = self._tokenize(text)
         if not words:
             return 0.0
 
         subordination_count = sum(1 for w in words if w in self.subordinators)
-
         return subordination_count / len(words)
 
     def _compute_coordination_rate(self, text: str) -> float:
-        """
-        Compute rate of coordinate clauses.
-        Indicates compound sentence structure.
-        """
+        """Compute rate of coordinate clauses."""
         words = self._tokenize(text)
         if not words:
             return 0.0
 
         coordination_count = sum(1 for w in words if w in self.coordinators)
-
         return coordination_count / len(words)
 
     def _extract_pronoun_usage(self, text: str) -> Dict[str, float]:
@@ -449,14 +449,10 @@ class LexiconLevelFeatures:
             "third_person": third_person_count / total_words
         }
 
-
-
     def _extract_verb_tense(self, text: str) -> Dict[str, float]:
         """
         Extract verb tense distribution using spaCy morphological features.
-        Based on the presence of Tense=Past/Pres/Fut in verbs.
         """
-        nlp = spacy.load("en_core_web_sm")
         doc = nlp(text)
 
         tenses = Counter({"past": 0, "present": 0, "future": 0})
@@ -479,31 +475,30 @@ class LexiconLevelFeatures:
 
     def _compute_negation_frequency(self, text: str) -> float:
         """Calcola frequenza negazioni"""
-        negation_words = ["not", "no", "never", "nothing", "none", "non"]
+        negation_words = {"not", "no", "never", "nothing", "none", "non"}
         words = text.lower().split()
         return sum(1 for w in words if w in negation_words) / len(words) if words else 0.0
-
 
     def _extract_emotions(self, text: str) -> Dict[str, float]:
         """
         Extract emotion scores using NRC Emotion Lexicon (Mohammad & Turney, 2013).
         Returns normalized emotion proportions.
         """
+        target_emotions = ["joy", "sadness", "anger", "fear", "disgust", "surprise",
+                           "anticipation", "trust"]
+
         if not text.strip():
-            return {emo: 0.0 for emo in ["joy", "sadness", "anger", "fear", "disgust", "surprise"]}
+            return {emo: 0.0 for emo in target_emotions}
 
         nrc = NRCLex(text)
         raw_scores = nrc.raw_emotion_scores
 
-
-        target_emotions = ["joy", "sadness", "anger", "fear", "disgust", "surprise", 'anticipation', 'trust']#, 'positive', 'negative']
         filtered_scores = {emo: raw_scores.get(emo, 0) for emo in target_emotions}
 
         total = sum(filtered_scores.values())
         if total == 0:
             return {emo: 0.0 for emo in target_emotions}
 
-        # Normalize
         normalized = {emo: round(val / total, 4) for emo, val in filtered_scores.items()}
         return normalized
 
@@ -513,50 +508,34 @@ class LexiconLevelFeatures:
         Range: -1 (very negative) to +1 (very positive).
         """
         words = self._tokenize(text)
-        if not words:
-            return 0.0
-
-        if not text.strip():
-            return {emo: 0.0 for emo in ['positive', 'negative']}
+        if not words or not text.strip():
+            return 0.0  # FIX: era `return {emo: 0.0 for emo in ['positive', 'negative']}`
 
         nrc = NRCLex(text)
-        raw_scores = nrc.raw_emotion_scores  # es: {'fear': 3, 'anger': 2, ...}
-        target_emotions = ['positive', 'negative']
-        filtered_scores = {emo: raw_scores.get(emo, 0) for emo in target_emotions}
-        #print(filtered_scores.values())
-        positive_count = list(filtered_scores.values()) [0]
-        negative_count = list(filtered_scores.values()) [1]
+        raw_scores = nrc.raw_emotion_scores
+
+        # FIX: accesso per chiave esplicita, non per posizione nella lista
+        positive_count = raw_scores.get('positive', 0)
+        negative_count = raw_scores.get('negative', 0)
         total_sentiment_words = positive_count + negative_count
 
         if total_sentiment_words == 0:
             return 0.0
 
-        # Polarity score
         polarity = (positive_count - negative_count) / total_sentiment_words
-
         return polarity
 
-
-
     def _compute_sentiment_intensity(self, text: str) -> float:
-
         """
         Compute overall sentiment intensity using VADER (Hutto & Gilbert, 2014).
-        Returns a compound score in range [-1, 1]:
-            -1 = extremely negative, +1 = extremely positive, 0 = neutral.
+        Returns a compound score in range [-1, 1].
         """
         vader_analyzer = SentimentIntensityAnalyzer()
         if not text or not text.strip():
             return 0.0
 
         scores = vader_analyzer.polarity_scores(text)
-        compound = scores["compound"]
-
-        # opzionale: normalizza su scala 0–1 se preferisci un output positivo
-        # normalized = (compound + 1) / 2
-
-        return round(compound, 4)
-
+        return round(scores["compound"], 4)
 
     def _compute_cohesion(self, text: str) -> float:
         """
@@ -576,7 +555,6 @@ class LexiconLevelFeatures:
             if not words1 or not words2:
                 continue
 
-            # Jaccard similarity between consecutive sentences
             intersection = len(words1 & words2)
             union = len(words1 | words2)
 
@@ -585,7 +563,6 @@ class LexiconLevelFeatures:
                 cohesion_scores.append(similarity)
 
         return np.mean(cohesion_scores) if cohesion_scores else 0.0
-    
 
     def _compute_lexical_overlap(self, text: str) -> float:
         """
@@ -605,7 +582,6 @@ class LexiconLevelFeatures:
             if not words1 or not words2:
                 continue
 
-            # Count overlapping words
             common_words = len(set(words1) & set(words2))
             overlap_ratio = common_words / min(len(words1), len(words2))
             overlaps.append(overlap_ratio)
@@ -622,7 +598,6 @@ class LexiconLevelFeatures:
             return 0.0
 
         connective_count = sum(1 for w in words if w in self.connectives)
-
         return connective_count / len(words)
 
     def _extract_affect_scores(self, text: str) -> Dict[str, float]:
@@ -665,15 +640,6 @@ class LexiconLevelFeatures:
 
         total_words = len(lemmas)
 
-
-        insight_lemmas = getattr(self, "_insight_lemmas", None)
-        if insight_lemmas is None:
-            self._insight_lemmas = {w for w in self.insight_words}
-            self._causation_lemmas = {w for w in self.causation_words}
-            self._certainty_lemmas = {w for w in self.certainty_words}
-            self._tentative_lemmas = {w for w in self.tentative_words}
-            insight_lemmas = self._insight_lemmas
-
         insight_count = sum(1 for w in lemmas if w in self._insight_lemmas)
         causation_count = sum(1 for w in lemmas if w in self._causation_lemmas)
         certainty_count = sum(1 for w in lemmas if w in self._certainty_lemmas)
@@ -686,26 +652,17 @@ class LexiconLevelFeatures:
             "tentative": tentative_count / total_words,
         }
 
-
     def _extract_social_processes(self, text: str) -> float:
         """
         Extract social process markers.
         Reduced in depression (social withdrawal).
-        Lemmatized comparison for accuracy.
         """
         lemmas = self._lemmatize_words(text)
         if not lemmas:
             return 0.0
 
-
-        social_lemmas = getattr(self, "_social_lemmas", None)
-        if social_lemmas is None:
-            self._social_lemmas = {w for w in self.social_words}
-            social_lemmas = self._social_lemmas
-
-        social_count = sum(1 for w in lemmas if w in social_lemmas)
+        social_count = sum(1 for w in lemmas if w in self._social_lemmas)
         return social_count / len(lemmas)
-
 
     def _compute_readability(self, text: str) -> float:
         """
@@ -718,7 +675,6 @@ class LexiconLevelFeatures:
         if not sentences or not words:
             return 0.0
 
-        # Count syllables (simplified: approximate by vowel groups)
         def count_syllables(word):
             vowels = 'aeiou'
             word = word.lower()
@@ -731,37 +687,28 @@ class LexiconLevelFeatures:
                     syllable_count += 1
                 previous_was_vowel = is_vowel
 
-            # Adjust for silent e
             if word.endswith('e'):
                 syllable_count -= 1
 
-            # Ensure at least one syllable
             return max(1, syllable_count)
 
         total_syllables = sum(count_syllables(w) for w in words)
 
-        # Flesch Reading Ease formula
         avg_sentence_length = len(words) / len(sentences)
         avg_syllables_per_word = total_syllables / len(words)
 
         flesch_score = 206.835 - 1.015 * avg_sentence_length - 84.6 * avg_syllables_per_word
 
-        # Normalize to 0-1 scale
         normalized_score = max(0.0, min(flesch_score / 100.0, 1.0))
-
         return normalized_score
 
     def _compute_avg_sentence_length(self, text: str) -> float:
-        """
-        Compute average sentence length in words.
-        Very long or very short sentences may indicate issues.
-        """
+        """Compute average sentence length in words."""
         sentences = self._get_sentences(text)
         if not sentences:
             return 0.0
 
         sentence_lengths = [len(self._tokenize(s)) for s in sentences]
-
         return np.mean(sentence_lengths)
 
     def _compute_graph_connectedness(self, text: str) -> float:
@@ -769,32 +716,31 @@ class LexiconLevelFeatures:
         Compute semantic graph connectedness.
         Lower values indicate "loosening of associations" (schizophrenia).
         Simplified: based on word co-occurrence patterns.
+        Note: the normalization cap of 10 connections per word is a heuristic
+        and can be adjusted via the max_connections parameter if needed.
         """
         sentences = self._get_sentences(text)
         if len(sentences) < 2:
             return 1.0
 
-        # Build simple word co-occurrence graph
-        word_connections = {}
+        word_connections: Dict[str, set] = {}
 
         for sentence in sentences:
             words = self._tokenize(sentence)
             for i, word1 in enumerate(words):
                 if word1 not in word_connections:
                     word_connections[word1] = set()
-                for word2 in words[i+1:]:
+                for word2 in words[i + 1:]:
                     word_connections[word1].add(word2)
 
-        # Calculate average connectivity
         if not word_connections:
             return 0.0
 
         total_connections = sum(len(connections) for connections in word_connections.values())
         avg_connections = total_connections / len(word_connections)
 
-        # Normalize (assuming max 10 connections per word)
+        # Normalizza su massimo euristico di 10 connessioni per parola
         connectedness = min(avg_connections / 10.0, 1.0)
-
         return connectedness
 
     def _compute_semantic_coherence(self, text: str) -> float:
@@ -806,9 +752,7 @@ class LexiconLevelFeatures:
         cohesion = self._compute_cohesion(text)
         overlap = self._compute_lexical_overlap(text)
 
-        # Semantic coherence as weighted average
-        coherence = 0.6 * cohesion + 0.4 * overlap
-
+        coherence = 0.5 * cohesion + 0.5 * overlap
         return coherence
 
     def extract_temporal_features(self, texts: List[str],
@@ -830,7 +774,6 @@ class LexiconLevelFeatures:
             window_texts = texts[i:i + window_size]
             window_markers = [self.extract_markers(t) for t in window_texts]
 
-            # Compute statistics on the window
             window_stats = self._compute_window_statistics(window_markers)
             temporal_features.append(window_stats)
 
@@ -841,18 +784,16 @@ class LexiconLevelFeatures:
         Compute statistics on temporal window of markers.
         Includes mean, std, trend for key features.
         """
-        # Extract key features across window
         lexical_diversity = [m.lexical_diversity for m in markers_list]
         sentiment_polarity = [m.sentiment_polarity for m in markers_list]
         negation_freq = [m.negation_frequency for m in markers_list]
 
-        # Compute statistics
         features = []
         for feature_values in [lexical_diversity, sentiment_polarity, negation_freq]:
             features.extend([
                 np.mean(feature_values),
                 np.std(feature_values),
-                np.max(feature_values) - np.min(feature_values)  # range
+                np.max(feature_values) - np.min(feature_values)
             ])
 
         return np.array(features)
