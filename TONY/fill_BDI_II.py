@@ -26,7 +26,7 @@ class BDIScorer:
         self.random_seed = random_seed
 
         # Retriever
-        from adaptRetriever import aRAG  # o il tuo import
+        from .adaptRetriever import aRAG  # o il tuo import
         self.retriever = aRAG(
             model_name=retriever_model_name,
             k_fallback=k_fallback,
