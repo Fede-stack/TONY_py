@@ -29,11 +29,17 @@ dependencies = [
     "seaborn",
     "matplotlib",
     "dadapy",
-    "wordfreq"
 ]
 
+[project.optional-dependencies]
+mlx = ["mlx-lm"]
 
 [tool.setuptools.packages.find]
+where = ["."]
+include = ["TONY*"]
+
+[tool.setuptools.package-data]
+"TONY.SAE" = ["*.json", "*.pt"]
 where = ["."]
 include = ["TONY*"]
 
