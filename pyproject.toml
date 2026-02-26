@@ -13,8 +13,14 @@ dependencies = [
     "pandas",
     "numpy",
     "sentence-transformers",
+    "plotly",
+    "tqdm",
+    "scikit-learn",
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["TONY*"]
+
+[tool.setuptools.package-data]
+"TONY.SAE" = ["*.json", "*.pt"]
