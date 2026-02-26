@@ -1,16 +1,14 @@
 # TONY/__init__.py
 
-from .APP import *
-from .HiTOP_predictor import *
-from .HiTOP_predictor_mlx import *
-from .IRF import *
-from .IRF_mlx import *
-from .LinguisticMarkers import *
-from .adaptRetriever import *
+# ── File flat (cross-platform) ──────────────────────────
 from .calculate_perplexity import *
 from .create_boxplot import *
-from .fill_BDI_II import *
 from .predict_emotion import *
 
+# ── Sottomoduli ─────────────────────────────────────────
+from . import HiTOP
+from . import IRF
+from . import Lexicon
 from . import SAE
+from . import retrieval
 
