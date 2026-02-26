@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
-from LinguisticMarkers import *
+from .LinguisticMarkers import LexiconLevelFeatures
 
 
 class TONY_MARKERS_APP:
