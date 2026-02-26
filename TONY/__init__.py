@@ -1,1 +1,1 @@
-from compute_perplexity import *
+from calculate_perplexity import *
