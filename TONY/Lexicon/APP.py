@@ -4,7 +4,7 @@ import pandas as pd
 from .LinguisticMarkers import *
 
 
-class TONY_MARKERS_APP:
+class MarkersExtraction:
     def __init__(self, root):
         self.root = root
         root.title("Linguistic Marker Extractor")
