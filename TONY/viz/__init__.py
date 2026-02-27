@@ -1,5 +1,5 @@
 # TONY/viz/__init__.py
-from .create_boxplot.py import *  
+from .create_boxplot import *  
 try:
     from .visualization import *  
 except ImportError:
