@@ -5,7 +5,7 @@ from google.colab import files
 import io
 from .LinguisticMarkers import *
 
-class TONY_MARKERS_ColabAPP:
+class MarkersExtractionColab:
     def __init__(self):
         # ── Upload input ────────────────────────────────────────
         self.upload_button = widgets.FileUpload(
