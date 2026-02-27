@@ -7,7 +7,7 @@ from .predict_emotion import *
 # ── Sottomoduli ─────────────────────────────────────────
 from . import HiTOP
 from . import IRF
-from . import Linguistic
+from . import LinguisticFeatures
 from . import SAE
 from . import retrieval
 from . import viz
