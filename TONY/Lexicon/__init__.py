@@ -6,5 +6,5 @@ try:
 except ImportError:
     pass
 except Exception:
-    pass  # tkinter può lanciare anche TclError se non c'è display
+    pass  
 
