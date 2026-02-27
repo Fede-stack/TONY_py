@@ -441,8 +441,8 @@ class SAEInterpreter:
         percentiles     = [f["percentile_rank"]     for f in features]
         interpretations = [f.get("interpretation", "N/A") for f in features]
 
-        min_act = min(activations)
-        max_act = max(activations)
+        min_act = min(percentiles)
+        max_act = max(percentiles)
 
         bar_labels = [
             f"  {a:.3f}  μ={m:.3f}  σ={s:.3f}  p={p:.0f}%"
@@ -477,7 +477,7 @@ class SAEInterpreter:
         fig = go.Figure()
 
         fig.add_trace(go.Bar(
-            x=activations,
+            x=percentiles,
             y=feature_labels,
             orientation="h",
             text=bar_labels,
