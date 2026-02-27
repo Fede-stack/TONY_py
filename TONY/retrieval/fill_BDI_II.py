@@ -134,7 +134,7 @@ Answer:
 
             for i in range(bdi_queries):
                 documents_retrieved = list(set(list(
-                    itertools.chain.from_iterable([relevant_docs[i + k] for k in range(len(bdi_items[0])])
+                    itertools.chain.from_iterable([relevant_docs[i + k] for k in range(len(bdi_items[0]))])
                 )))
                 content = ''.join([
                     str(idx) + ' ' + item + '\n '
