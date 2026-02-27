@@ -9,7 +9,7 @@ import umap
 from sklearn.cluster import KMeans
 from pathlib import Path
 
-class ClusterVisualizer:
+class visualize_topics:
     def __init__(self, n_clusters=50, embedding_model_name='FritzStack/all-MiniLM-L6-v2-TSDAE-RedditMentalHealth'):
         self.n_clusters = n_clusters
         self.embedding_model_name = embedding_model_name
