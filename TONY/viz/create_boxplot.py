@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-class BoxplotComparer:
+class test_hypothesis:
 
     def __init__(self, labels=None, palette=None):
         self.labels = labels or ['Depressed', 'Controls']
