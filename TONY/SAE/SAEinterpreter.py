@@ -430,31 +430,34 @@ class SAEInterpreter:
 
     def plot_interpretation(self, result: Dict, max_features: int = 10, renderer: str = "colab"):
         """Plot interpretation as interactive Plotly horizontal bar chart."""
-        import plotly.graph_objects as go
-        import plotly.colors as pc
-
-        features        = list(reversed(result["significant_features"][:max_features]))
-        feature_labels  = [f"#{f['feature_idx']}" for f in features]
-        activations     = [f["activation"]         for f in features]
-        means           = [f["mean"]               for f in features]
-        stds            = [f["std"]                for f in features]
-        percentiles     = [f["percentile_rank"]     for f in features]
-        interpretations = [f.get("interpretation", "N/A") for f in features]
-
+        
+    
+        sorted_features = sorted(
+            result["significant_features"],
+            key=lambda f: f["percentile_rank"],
+            reverse=True
+        )
+        features        = list(reversed(sorted_features[:max_features]))
+        feature_labels  = [f"#{f['feature_idx']}"          for f in features]
+        activations     = [f["activation"]                  for f in features]
+        means           = [f["mean"]                        for f in features]
+        stds            = [f["std"]                         for f in features]
+        percentiles     = [f["percentile_rank"]             for f in features]
+        interpretations = [f.get("interpretation", "N/A")  for f in features]
+    
         min_act = min(percentiles)
         max_act = max(percentiles)
-
+    
         bar_labels = [
             f"  {a:.3f}  μ={m:.3f}  σ={s:.3f}  p={p:.0f}%"
             for a, m, s, p in zip(activations, means, stds, percentiles)
         ]
-
-        # Interpretazione wrappata a ~60 caratteri per riga
+    
         def wrap(text, width=60):
             words = text.split()
             lines, line = [], []
             for w in words:
-                if sum(len(x)+1 for x in line) + len(w) > width:
+                if sum(len(x) + 1 for x in line) + len(w) > width:
                     lines.append(" ".join(line))
                     line = [w]
                 else:
@@ -462,7 +465,7 @@ class SAEInterpreter:
             if line:
                 lines.append(" ".join(line))
             return "<br>".join(lines)
-
+    
         hover_texts = [
             f"<b>Feature {fl}</b><br>"
             f"Activation: {a:.4f}  |  Percentile: {p:.1f}%<br>"
@@ -473,9 +476,9 @@ class SAEInterpreter:
                 feature_labels, activations, percentiles, means, stds, interpretations
             )
         ]
-
+    
         fig = go.Figure()
-
+    
         fig.add_trace(go.Bar(
             x=percentiles,
             y=feature_labels,
@@ -486,7 +489,7 @@ class SAEInterpreter:
             hovertext=hover_texts,
             hoverinfo="text",
             marker=dict(
-                color=activations,
+                color=percentiles,
                 colorscale="Blues",
                 cmin=min_act,
                 cmax=max_act,
@@ -499,7 +502,7 @@ class SAEInterpreter:
                 line_width=0,
             ),
         ))
-
+    
         fig.update_layout(
             title=dict(
                 text=(
@@ -529,9 +532,9 @@ class SAEInterpreter:
             width=1050,
             bargap=0.3,
         )
-
+    
         fig.update_xaxes(
-            title_text="Activation",
+            title_text="Percentiles",
             showgrid=True,
             gridcolor="#eeeeee",
             zeroline=True,
@@ -548,5 +551,6 @@ class SAEInterpreter:
             tickfont=dict(size=13),
             title_font=dict(size=13),
         )
+    
         fig.update_traces(cliponaxis=False)
         fig.show()
