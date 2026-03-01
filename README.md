@@ -31,3 +31,15 @@ app = MarkersExtractionColab() #Use MarkersExtraction if you are running it loca
 <br><br>
 <img src="https://raw.githubusercontent.com/Fede-stack/TONYpy/main/images/gif_extractmarker.gif" width="500">
 
+#### LLMs Features
+
+
+```{python}
+from TONY.HiTOP import HiTOP_Predictor
+
+text = 'Some days I keep living, even though I feel completely alone in the world'
+
+hitop = HiTOP_Predictor(model_name = FritzStack/HiTOP-Llama-3.2-3B_4bit-merged'
+hitop.predict_HiTOP(text)
+```
+
