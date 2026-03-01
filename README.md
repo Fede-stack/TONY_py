@@ -20,7 +20,7 @@ pip install !pip install git+https://github.com/Fede-stack/TONYpy.git
 
 ### Quick Start
 
-#### Linguistic Markers
+#### How to extract Linguistic Markers?
 
 ```{python}
 from TONY.Lexicon import MarkersExtraction, MarkersExtractionColab
@@ -30,3 +30,4 @@ app = MarkersExtractionColab() #Use MarkersExtraction if you are running it loca
 
 <br><br>
 <img src="https://raw.githubusercontent.com/Fede-stack/TONYpy/main/images/gif_extractmarker.gif" width="500">
+
