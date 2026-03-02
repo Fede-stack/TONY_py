@@ -99,8 +99,6 @@ interpreter.plot_interpretation(result)
 # altered states of consciousness.
 ```
 
----
 
-Vuoi che uniformi lo stile di tutti e quattro i moduli (HiTOP, IRF, BDIScorer, SAEInterpreter) in un unico documento di documentazione?
 
 
