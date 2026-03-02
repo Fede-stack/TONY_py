@@ -34,12 +34,14 @@ app = MarkersExtractionColab() #Use MarkersExtraction if you are running it loca
 #### LLMs Features
 
 
-```{python}
+The Hierarchical Taxonomy of Psychopathology (HiTOP) is a dimensional framework that organizes psychopathology into a hierarchy of empirically derived constructs, from broad spectra (e.g., Internalizing, Thought Disorder, Detachment) down to specific maladaptive traits such as *anxiousness*, *withdrawal*, *depressivity*, or *emotional lability*. Unlike categorical diagnostic systems (e.g., DSM-5), HiTOP treats psychopathological features as continuous dimensions, enabling a finer-grained, transdiagnostic characterization of psychological functioning. Detecting these traits directly from language is therefore a clinically meaningful task, as each trait represents a stable, observable dimension of personality dysfunction that can manifest in naturalistic text.
+
+```python
 from TONY.HiTOP import HiTOP_Predictor
-
 text = 'Some days I keep living, even though I feel completely alone in the world'
-
-hitop = HiTOP_Predictor(model_name = FritzStack/HiTOP-Llama-3.2-3B_4bit-merged'
+hitop = HiTOP_Predictor(model_name='FritzStack/HiTOP-Llama-3.2-3B_4bit-merged')
 hitop.predict_HiTOP(text)
+# Output: Anhedonia, Withdrawal, Depressivity
 ```
+
 
