@@ -45,6 +45,7 @@ hitop.predict_HiTOP(text)
 # Output: Anhedonia, Withdrawal, Depressivity
 ```
 
+---
 
 The **Interpersonal Risk Factors** (**IRF**) module detects the two core interpersonal risk factors defined by the Interpersonal Theory of Suicide (Van Orden et al., 2010): **Thwarted Belongingness** (TBE) — the painful feeling of being disconnected from others — and **Perceived Burdensomeness** (PBU) - the perception of being a liability to those around oneself. The module not only predicts the presence of each factor but also highlights the supporting textual evidence, providing interpretable outputs for both clinical and research use.
 
@@ -66,5 +67,40 @@ irf.highlight_evidence_IRF(text)
 
 If you are working with an Apple Silicon Mac (M1/M2/M3/M4 chip), you can run the model locally using **MLX**, enabling fast and energy-efficient inference without requiring a GPU or internet connection.
 
+---
+
+The **BDI-II Scorer** module automatically completes the Beck Depression Inventory II (BDI-II) questionnaire from a user's post history, using an adaptive Retrieval-Augmented Generation (aRAG) pipeline. For each BDI-II item, the module dynamically retrieves the most relevant posts from the user's history and passes them to a generative LLM to produce a structured BDI-II response. Unlike standard RAG approaches that fix the number of retrieved documents a priori, the adaptive mechanism adjusts retrieval size based on the semantic density of the user's history relative to each item — retrieving more evidence when available, and less when the signal is sparse.
+
+```python
+from TONY.BDI import BDIScorer
+
+posts = ['I have been feeling empty for weeks', 'I can barely get out of bed', ...]
+scorer = BDIScorer(model_name='gemma-27B')
+scorer.predict_BDI(posts)
+
+# Output: 21-dimensional vector of predicted BDI-II item scores
+```
+
+---
+
+The **SAE Interpreter** module provides interpretable latent feature analysis using a Sparse Autoencoder (SAE) trained on 710,000 Reddit posts spanning from casual conversation to mental health-focused communities. Given an input text, the model identifies the most strongly activated latent features, each of which is automatically described in natural language, capturing the psychological and semantic content expressed in the text.
+
+```python
+from TONY.SAE import SAEInterpreter
+
+text = 'Some days I keep living, even though I feel completely alone in the world'
+interpreter = SAEInterpreter()
+result = interpreter.interpret(text, top_k=10)
+interpreter.plot_interpretation(result)
+
+# Feature #25 activated
+# This feature captures posts that involve questioning or describing
+# unusual perceptual experiences, often related to dissociation or
+# altered states of consciousness.
+```
+
+---
+
+Vuoi che uniformi lo stile di tutti e quattro i moduli (HiTOP, IRF, BDIScorer, SAEInterpreter) in un unico documento di documentazione?
 
 
