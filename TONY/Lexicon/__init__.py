@@ -1,6 +1,6 @@
 # TONY/Lexicon/__init__.py
 from .LinguisticMarkers import *  
-from .APP_Colab import *
+
 try:
     from .APP import *  
 except ImportError:
@@ -8,3 +8,9 @@ except ImportError:
 except Exception:
     pass  
 
+try:
+    from .APP_Colab import *  
+except ImportError:
+    pass
+except Exception:
+    pass  
