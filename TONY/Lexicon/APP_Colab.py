@@ -1,9 +1,15 @@
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 import pandas as pd
-from google.colab import files
 import io
 from .LinguisticMarkers import *
+
+try:
+    from google.colab import files
+    _COLAB_AVAILABLE = True
+except ModuleNotFoundError:
+    _COLAB_AVAILABLE = False
+
 
 class MarkersExtractionColab:
     def __init__(self):
