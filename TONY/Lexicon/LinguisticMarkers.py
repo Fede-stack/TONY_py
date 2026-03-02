@@ -75,8 +75,6 @@ class LinguisticMarkers:
     graph_connectedness: Optional[float] = None
     semantic_coherence: Optional[float] = None
 
-    # --- NEW FEATURES ---
-
     # Lexicon-based frequencies (lexicons already existed but were never extracted)
     absolutist_word_frequency: float = 0.0      # depression, anxiety, OCD
     death_word_frequency: float = 0.0           # suicide risk
@@ -216,7 +214,6 @@ class LexiconLevelFeatures:
             'besides', 'otherwise', 'instead', 'then', 'next', 'finally'
         }
 
-        # --- NEW LEXICONS ---
 
         # Somatic / body words (relevant for depression, eating disorders)
         self.body_words = {
@@ -335,9 +332,6 @@ class LexiconLevelFeatures:
 
         return markers
 
-    # ------------------------------------------------------------------ #
-    #  Existing methods (unchanged)                                        #
-    # ------------------------------------------------------------------ #
 
     def _tokenize(self, text: str) -> List[str]:
         text = text.lower()
@@ -595,10 +589,6 @@ class LexiconLevelFeatures:
     def _compute_semantic_coherence(self, text: str) -> float:
         return 0.5 * self._compute_cohesion(text) + 0.5 * self._compute_lexical_overlap(text)
 
-    # ------------------------------------------------------------------ #
-    #  NEW methods                                                         #
-    # ------------------------------------------------------------------ #
-
     def _compute_lexicon_frequency(self, text: str, lexicon: set) -> float:
         """
         Compute the proportion of words in `text` that belong to `lexicon`.
@@ -674,10 +664,6 @@ class LexiconLevelFeatures:
             return 0.0
         unique = len(set(words))
         return round(1.0 - unique / len(words), 4)
-
-    # ------------------------------------------------------------------ #
-    #  Temporal features (unchanged)                                       #
-    # ------------------------------------------------------------------ #
 
     def extract_temporal_features(self, texts: List[str], window_size: int = 5) -> np.ndarray:
         temporal_features = []
