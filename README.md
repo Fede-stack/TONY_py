@@ -15,7 +15,7 @@ Overview of how to begin using the package.
 ### Installation
 
 ```{python}
-pip install !pip install git+https://github.com/Fede-stack/TONYpy.git
+!pip install git+https://github.com/Fede-stack/TONYpy.git
 ```
 
 ### Quick Start
