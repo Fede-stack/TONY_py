@@ -17,8 +17,7 @@ import seaborn as sns
 nltk.download('punkt_tab')
 nltk.download('vader_lexicon', quiet=True)
 
-import sys
-!{sys.executable} -m spacy download en_core_web_sm
+
 nlp = spacy.load("en_core_web_sm")
 
 
