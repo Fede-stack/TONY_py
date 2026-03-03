@@ -109,6 +109,21 @@ interpreter.plot_interpretation(result)
 # altered states of consciousness.
 ```
 
+---
+
+Additionally, you can visualize the documents into clusters of topics. Following an example with a 5000 sample coming from Reddit Mental Health dataset
+
+
+```python
+from TONY.viz import visualize_topics
+
+clusterer = visualize_topics(n_clusters=5)
+clusterer.fit(list(texts))
+clusterer.plot()
+```
+
+ <br><br>
+<img src="https://github.com/Fede-stack/TONY_py/blob/main/images/cluster_viz.png" alt="" width="400">
 
 
 
