@@ -4,7 +4,7 @@ import torch
 
 class Emotions_Predictor:
 
-    def __init__(self, model_name):
+    def __init__(self, model_name = 'FritzStack/QWEN4B-emotions-merged'):
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name, trust_remote_code=True
@@ -16,7 +16,7 @@ class Emotions_Predictor:
         )
 
     def predict_emotions(self, text, max_new_tokens=200):
-        prompt = f"{text}" + "Emotion: "
+        prompt = f"{text}" + " Emotions Output: "
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
 
         with torch.no_grad():
