@@ -2,7 +2,7 @@ from mlx_lm import load, generate
 from mlx_lm.sample_utils import make_sampler
 
 
-class EmotionsPredictor_mlx:
+class Emotions_Predictor_mlx:
 
     def __init__(self, model_name: str = "", max_new_tokens: int = 200):
         self.max_new_tokens = max_new_tokens
