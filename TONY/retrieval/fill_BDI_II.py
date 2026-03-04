@@ -26,7 +26,7 @@ class BDIScorer:
         self.random_seed = random_seed
 
         # Retriever
-        from .adaptRetriever import aRAG  # o il tuo import
+        from adaptRetriever import aRAG  # o il tuo import
         self.retriever = aRAG(
             model_name=retriever_model_name,
             k_fallback=k_fallback,
@@ -110,12 +110,11 @@ Answer:
         match = re.search(r'[0-3]', raw.strip())
         return match.group(0) if match else '0'
 
-    def score(self, docss, sentences_bdi, bdi_items, items_names):
+    def score(self, docss, bdi_items, items_names):
         """
         Parameters
         ----------
         docss        : list of users, each user is a list of posts
-        sentences_bdi: list of sentences used for retrieval
         bdi_items    : list of lists of response options per item
         items_names  : list of BDI item names
 
@@ -124,6 +123,7 @@ Answer:
         response_llms : list of lists — one score per item per user
         """
         self._set_seeds()
+        sentences_bdi = list(itertools.chain.from_iterable(bdi_items))
         response_llms = []
 
         for j, user in enumerate(docss):
@@ -132,9 +132,9 @@ Answer:
 
             relevant_docs = self.retriever.retrieve_batch(sentences_bdi, user)
 
-            for i in range(bdi_queries):
+            for i in range(len(items_names)):
                 documents_retrieved = list(set(list(
-                    itertools.chain.from_iterable([relevant_docs[i + k] for k in range(len(bdi_items[0]))])
+                    itertools.chain.from_iterable([relevant_docs[i + k] for k in range(4)])
                 )))
                 content = ''.join([
                     str(idx) + ' ' + item + '\n '
