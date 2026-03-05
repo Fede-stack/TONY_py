@@ -4,7 +4,7 @@ import torch
 
 class IRFPredictor:
 
-    def __init__(self, model_name='FritzStack/IRF-Qwen_8B_4bit-merged_2epo'):
+    def __init__(self, model_name='FritzStack/IRF-QWEN8B_4bit'):
         self.prompt_1 = """Question 1: Is there evidence of Thwarted Belongingness?
 Answer: """
         self.prompt_2 = """Question 2: Is there evidence of Perceived Burdensomeness?
@@ -39,3 +39,4 @@ Answer: """
         ).strip()
 
         return self.prompt_1 + generated_text
+
