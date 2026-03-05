@@ -4,7 +4,7 @@ from mlx_lm.sample_utils import make_sampler
 
 class Emotions_Predictor_mlx:
 
-    def __init__(self, model_name: str = "", max_new_tokens: int = 200):
+    def __init__(self, model_name: str = "FritzStack/QWEN4B-GoEmotions-mlx-Q4", max_new_tokens: int = 200):
         self.max_new_tokens = max_new_tokens
         self.model, self.tokenizer = load(model_name)
 
