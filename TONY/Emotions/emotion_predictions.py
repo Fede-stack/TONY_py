@@ -4,7 +4,7 @@ import torch
 
 class Emotions_Predictor:
 
-    def __init__(self, model_name = 'FritzStack/QWEN4B-emotions-merged'):
+    def __init__(self, model_name = 'FritzStack/QWEN4B-GoEmotions_4bit'):
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name, trust_remote_code=True
