@@ -4,7 +4,7 @@ from mlx_lm.sample_utils import make_sampler
 
 class HiTOPPredictor_mlx:
 
-    def __init__(self, model_name: str = "FritzStack/HiTOP-Llama-3.2-3B_4bit-merged-mlx-4Bit", max_new_tokens: int = 200):
+    def __init__(self, model_name: str = "FritzStack/HiTOP-Llama-3B-mlx-Q4", max_new_tokens: int = 200):
         self.max_new_tokens = max_new_tokens
         self.model, self.tokenizer = load(model_name)
 
