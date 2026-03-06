@@ -12,7 +12,7 @@ class Emotions_Predictor_mlx:
         """
         Predict Emotions for a given text.
         """
-        prompt = text + " Emotions Output:" 
+        prompt = text + "\n Emotions Output:" 
 
         sampler = make_sampler(temp=0.0, top_k=10)
 
