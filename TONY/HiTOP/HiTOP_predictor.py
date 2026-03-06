@@ -16,7 +16,7 @@ class HiTOP_Predictor:
         )
 
     def predict_HiTOP(self, text, max_new_tokens=200):
-        prompt = f"{text}" + "HiTOP Traits:"
+        prompt = f"{text}" + "\n HiTOP Traits:"
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
 
         with torch.no_grad():
