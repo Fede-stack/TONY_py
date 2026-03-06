@@ -16,7 +16,7 @@ class Emotions_Predictor:
         )
 
     def predict_emotions(self, text, max_new_tokens=200):
-        prompt = f"{text}" + " Emotions Output: "
+        prompt = f"{text}" + "\n Emotions Output: "
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
 
         with torch.no_grad():
