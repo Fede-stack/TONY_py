@@ -12,7 +12,7 @@ class HiTOPPredictor_mlx:
         """
         Predict HiTOP traits for a given text.
         """
-        prompt = text + "HiTOP Traits:" 
+        prompt = text + "\n HiTOP Traits:" 
 
         sampler = make_sampler(temp=0.0, top_k=10)
 
