@@ -21,7 +21,7 @@ dependencies = [
     "gensim",
     "keybert",
     "textblob",
-    "NRCLex",
+    "NRCLex==3.0.0",
     "umap-learn",
     "datasets",
     "accelerate",
