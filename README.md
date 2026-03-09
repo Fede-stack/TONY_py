@@ -22,6 +22,12 @@ Overview of how to begin using the package.
 
 #### How to extract Linguistic Markers?
 
+> [!NOTE]
+> TONY uses spaCy under the hood. Before running the cell below, install the English language model:
+> ```bash
+> python -m spacy download en_core_web_sm
+> ```
+
 ```{python}
 from TONY.Lexicon import MarkersExtraction, MarkersExtractionColab
 
