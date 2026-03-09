@@ -54,7 +54,7 @@ The Hierarchical Taxonomy of Psychopathology (**HiTOP**) is a dimensional framew
 With **TONY** you can extract HiTOP traits from text with just a few lines of code, leveraging a lightweight fine-tuned LLM that runs efficiently on consumer hardware. If you are working with an Apple Silicon Mac (M1/M2/M3/M4 chip), you can choose to run the model locally using **MLX**, Apple's machine learning framework optimized for the Metal Performance Shaders backend, enabling fast and energy-efficient inference directly on your device — no GPU server or internet connection required.
 
 ```python
-from TONY.HiTOP import HiTOP_Predictor, HiTOP_Predictor_mlx
+from TONY.HiTOP import HiTOP_Predictor, HiTOPPredictor_mlx
 text = 'Some days I keep living, even though I feel completely alone in the world'
 hitop = HiTOP_Predictor(model_name='FritzStack/HiTOP-Llama-3.2-3B_4bit-merged')
 hitop.predict_HiTOP(text)
