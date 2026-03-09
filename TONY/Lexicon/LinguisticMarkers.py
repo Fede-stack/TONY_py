@@ -14,11 +14,27 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import seaborn as sns
 
-nltk.download('punkt_tab')
+nltk.download('punkt_tab', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
 
+# ---------------------------------------------------------------------------
+# Lazy loader: spaCy model is loaded only on first use, NOT at import time.
+# This prevents OSError crashes when the model is not yet installed.
+# ---------------------------------------------------------------------------
+_nlp = None
 
-nlp = spacy.load("en_core_web_sm")
+def _get_nlp():
+    global _nlp
+    if _nlp is None:
+        try:
+            _nlp = spacy.load("en_core_web_sm")
+        except OSError:
+            raise OSError(
+                "\n[TONY] spaCy model 'en_core_web_sm' not found in the current environment.\n"
+                "Please install it with:\n\n"
+                "    python -m spacy download en_core_web_sm\n"
+            )
+    return _nlp
 
 
 class MentalHealthCondition(Enum):
@@ -76,7 +92,7 @@ class LinguisticMarkers:
     graph_connectedness: Optional[float] = None
     semantic_coherence: Optional[float] = None
 
-    # Lexicon-based frequencies (lexicons already existed but were never extracted)
+    # Lexicon-based frequencies
     absolutist_word_frequency: float = 0.0      # depression, anxiety, OCD
     death_word_frequency: float = 0.0           # suicide risk
     anxiety_word_frequency: float = 0.0         # anxiety
@@ -112,6 +128,10 @@ class LexiconLevelFeatures:
     Based on:
     - Natural Language Processing for mental health interventions
     - Multimodal approaches (text + optional acoustic features)
+
+    Note: the spaCy model 'en_core_web_sm' is loaded lazily on first use.
+    If it is not installed, install it with:
+        python -m spacy download en_core_web_sm
     """
 
     def __init__(self, language: str = "en"):
@@ -215,7 +235,6 @@ class LexiconLevelFeatures:
             'besides', 'otherwise', 'instead', 'then', 'next', 'finally'
         }
 
-
         # Somatic / body words (relevant for depression, eating disorders)
         self.body_words = {
             'sleep', 'tired', 'exhausted', 'hungry', 'eat', 'food', 'appetite',
@@ -307,32 +326,34 @@ class LexiconLevelFeatures:
         )
 
         markers.graph_connectedness = self._compute_graph_connectedness(text)
-        markers.semantic_coherence = self._compute_semantic_coherence(text)
+        markers.semantic_coherence  = self._compute_semantic_coherence(text)
 
-        # --- NEW FEATURES ---
-        markers.absolutist_word_frequency = self._compute_lexicon_frequency(text, self.absolutist_words)
-        markers.death_word_frequency = self._compute_lexicon_frequency(text, self.death_words)
-        markers.anxiety_word_frequency = self._compute_lexicon_frequency(text, self.anxiety_words)
-        markers.sadness_word_frequency = self._compute_lexicon_frequency(text, self.sadness_words)
-        markers.anger_word_frequency = self._compute_lexicon_frequency(text, self.anger_words)
-        markers.body_word_frequency = self._compute_lexicon_frequency(text, self.body_words)
-        markers.achievement_word_frequency = self._compute_lexicon_frequency(text, self.achievement_words)
+        markers.absolutist_word_frequency   = self._compute_lexicon_frequency(text, self.absolutist_words)
+        markers.death_word_frequency        = self._compute_lexicon_frequency(text, self.death_words)
+        markers.anxiety_word_frequency      = self._compute_lexicon_frequency(text, self.anxiety_words)
+        markers.sadness_word_frequency      = self._compute_lexicon_frequency(text, self.sadness_words)
+        markers.anger_word_frequency        = self._compute_lexicon_frequency(text, self.anger_words)
+        markers.body_word_frequency         = self._compute_lexicon_frequency(text, self.body_words)
+        markers.achievement_word_frequency  = self._compute_lexicon_frequency(text, self.achievement_words)
 
-        markers.question_ratio = self._compute_punctuation_sentence_ratio(text, '?')
-        markers.exclamation_ratio = self._compute_punctuation_sentence_ratio(text, '!')
-        markers.incomplete_sentence_ratio = self._compute_incomplete_sentence_ratio(text)
-        markers.mean_dependency_distance = self._compute_mean_dependency_distance(text)
+        markers.question_ratio              = self._compute_punctuation_sentence_ratio(text, '?')
+        markers.exclamation_ratio           = self._compute_punctuation_sentence_ratio(text, '!')
+        markers.incomplete_sentence_ratio   = self._compute_incomplete_sentence_ratio(text)
+        markers.mean_dependency_distance    = self._compute_mean_dependency_distance(text)
 
-        markers.past_future_ratio = self._compute_past_future_ratio(markers.verb_tense_distribution)
-        markers.repetition_rate = self._compute_repetition_rate(text)
-        markers.pos_frequencies        = self._compute_pos_frequencies(text)
-        markers.extended_pos           = self._compute_extended_pos(text)
-        markers.morphological_features = self._compute_morphological_features(text)
-        markers.dependency_features    = self._compute_dependency_features(text)
-        markers.ner_features           = self._compute_ner_features(text)
+        markers.past_future_ratio           = self._compute_past_future_ratio(markers.verb_tense_distribution)
+        markers.repetition_rate             = self._compute_repetition_rate(text)
+        markers.pos_frequencies             = self._compute_pos_frequencies(text)
+        markers.extended_pos                = self._compute_extended_pos(text)
+        markers.morphological_features      = self._compute_morphological_features(text)
+        markers.dependency_features         = self._compute_dependency_features(text)
+        markers.ner_features                = self._compute_ner_features(text)
 
         return markers
 
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
 
     def _tokenize(self, text: str) -> List[str]:
         text = text.lower()
@@ -341,7 +362,7 @@ class LexiconLevelFeatures:
         return [w for w in words if w]
 
     def _lemmatize_words(self, text: str) -> List[str]:
-        doc = nlp(text)
+        doc = _get_nlp()(text)
         return [t.lemma_.lower() for t in doc if t.is_alpha]
 
     def _get_sentences(self, text: str) -> List[str]:
@@ -361,7 +382,7 @@ class LexiconLevelFeatures:
         freqs = np.array([word_frequency(w, self.language) for w in words])
         return {
             "mean_frequency": round(float(np.mean(freqs)), 6),
-            "std_frequency":  round(float(np.std(freqs)), 6),
+            "std_frequency":  round(float(np.std(freqs)),  6),
         }
 
     def _compute_word_prevalence(self, text: str) -> float:
@@ -416,7 +437,7 @@ class LexiconLevelFeatures:
         }
 
     def _extract_verb_tense(self, text: str) -> Dict[str, float]:
-        doc = nlp(text)
+        doc = _get_nlp()(text)
         tenses = Counter({"past": 0, "present": 0, "future": 0})
         for token in doc:
             if token.pos_ in ("VERB", "AUX"):
@@ -443,21 +464,16 @@ class LexiconLevelFeatures:
         if not text.strip():
             return {emo: 0.0 for emo in target_emotions}
         nrc = NRCLex(text)
-        raw = nrc.raw_emotion_scores
-        filtered = {emo: raw.get(emo, 0) for emo in target_emotions}
-        total = sum(filtered.values())
-        if total == 0:
-            return {emo: 0.0 for emo in target_emotions}
-        return {emo: round(v / total, 4) for emo, v in filtered.items()}
+        raw = nrc.affect_frequencies          # already normalised (0–1)
+        return {emo: round(raw.get(emo, 0.0), 4) for emo in target_emotions}
 
     def _compute_sentiment_polarity(self, text: str) -> float:
-        words = self._tokenize(text)
-        if not words or not text.strip():
+        if not text.strip():
             return 0.0
-        nrc = NRCLex(text)
-        raw = nrc.raw_emotion_scores
-        pos = raw.get('positive', 0)
-        neg = raw.get('negative', 0)
+        nrc   = NRCLex(text)
+        raw   = nrc.affect_frequencies        # already normalised (0–1)
+        pos   = raw.get('positive', 0.0)
+        neg   = raw.get('negative', 0.0)
         total = pos + neg
         return (pos - neg) / total if total else 0.0
 
@@ -505,18 +521,18 @@ class LexiconLevelFeatures:
     def _extract_affect_scores(self, text: str) -> Dict[str, float]:
         if not text.strip():
             return {"valence": 0.0, "arousal": 0.0, "dominance": 0.0}
-        nrc = NRCLex(text)
-        emotions = nrc.raw_emotion_scores
-        pos   = emotions.get("positive", 0)
-        neg   = emotions.get("negative", 0)
-        anger = emotions.get("anger", 0)
-        fear  = emotions.get("fear", 0)
-        joy   = emotions.get("joy", 0)
-        total = sum(emotions.values()) or 1
+        nrc      = NRCLex(text)
+        emotions = nrc.affect_frequencies      # already normalised (0-1)
+        pos      = emotions.get("positive", 0.0)
+        neg      = emotions.get("negative", 0.0)
+        anger    = emotions.get("anger",    0.0)
+        fear     = emotions.get("fear",     0.0)
+        joy      = emotions.get("joy",      0.0)
+        # values are already normalised -> no division by total needed
         return {
-            "valence":   round((pos - neg) / total, 4),
-            "arousal":   round((anger + fear + joy) / total, 4),
-            "dominance": round(1 - fear / total, 4),
+            "valence":   round(pos - neg,          4),
+            "arousal":   round(anger + fear + joy, 4),
+            "dominance": round(1.0 - fear,         4),
         }
 
     def _extract_cognitive_processes(self, text: str) -> Dict[str, float]:
@@ -539,14 +555,14 @@ class LexiconLevelFeatures:
 
     def _compute_readability(self, text: str) -> float:
         sentences = self._get_sentences(text)
-        words = self._tokenize(text)
+        words     = self._tokenize(text)
         if not sentences or not words:
             return 0.0
 
         def count_syllables(word):
-            vowels = 'aeiou'
-            word = word.lower()
-            count = 0
+            vowels    = 'aeiou'
+            word      = word.lower()
+            count     = 0
             prev_vowel = False
             for char in word:
                 is_vowel = char in vowels
@@ -557,10 +573,10 @@ class LexiconLevelFeatures:
                 count -= 1
             return max(1, count)
 
-        total_syllables = sum(count_syllables(w) for w in words)
-        avg_sent_len = len(words) / len(sentences)
+        total_syllables  = sum(count_syllables(w) for w in words)
+        avg_sent_len     = len(words) / len(sentences)
         avg_syl_per_word = total_syllables / len(words)
-        flesch = 206.835 - 1.015 * avg_sent_len - 84.6 * avg_syl_per_word
+        flesch           = 206.835 - 1.015 * avg_sent_len - 84.6 * avg_syl_per_word
         return max(0.0, min(flesch / 100.0, 1.0))
 
     def _compute_avg_sentence_length(self, text: str) -> float:
@@ -584,7 +600,7 @@ class LexiconLevelFeatures:
         if not word_connections:
             return 0.0
         total = sum(len(v) for v in word_connections.values())
-        avg = total / len(word_connections)
+        avg   = total / len(word_connections)
         return min(avg / 10.0, 1.0)
 
     def _compute_semantic_coherence(self, text: str) -> float:
@@ -593,7 +609,7 @@ class LexiconLevelFeatures:
     def _compute_lexicon_frequency(self, text: str, lexicon: set) -> float:
         """
         Compute the proportion of words in `text` that belong to `lexicon`.
-        Generic helper used by all new lexicon-based features.
+        Generic helper used by all lexicon-based features.
         """
         words = self._tokenize(text)
         if not words:
@@ -607,7 +623,6 @@ class LexiconLevelFeatures:
         """
         if not text.strip():
             return 0.0
-        # Split keeping the delimiter so we can inspect it
         raw_sentences = re.split(r'(?<=[.!?])\s+', text.strip())
         if not raw_sentences:
             return 0.0
@@ -629,10 +644,9 @@ class LexiconLevelFeatures:
         """
         Compute the mean dependency distance (MDD) across all tokens using spaCy.
         MDD = average of |token.i - token.head.i| for non-root tokens.
-        Higher MDD indicates more syntactically complex, harder-to-process sentences,
-        which has been associated with anxiety and cognitive load.
+        Higher MDD → more syntactically complex sentences (associated with anxiety).
         """
-        doc = nlp(text)
+        doc       = _get_nlp()(text)
         distances = [
             abs(token.i - token.head.i)
             for token in doc
@@ -642,11 +656,10 @@ class LexiconLevelFeatures:
 
     def _compute_past_future_ratio(self, tense_dist: Dict[str, float]) -> float:
         """
-        Compute ratio of past tense to future tense usage.
-        past / (future + epsilon)
-        High values → rumination / depression.
-        Low values  → future-oriented / anxiety.
-        Uses already-computed verb_tense_distribution to avoid double spaCy parsing.
+        Compute log-ratio of past to future tense usage:  log(past+1) - log(future+1).
+        High  → rumination / depression.
+        Low   → future-oriented / anxiety.
+        Re-uses already-computed verb_tense_distribution to avoid double spaCy parsing.
         """
         past   = tense_dist.get("past",   0.0)
         future = tense_dist.get("future", 0.0)
@@ -654,11 +667,9 @@ class LexiconLevelFeatures:
 
     def _compute_repetition_rate(self, text: str) -> float:
         """
-        Compute word repetition rate: proportion of words that are immediate
-        repetitions of the previous word OR appear more than once in the text.
-        Relevant for OCD (rumination) and disorganized thought (schizophrenia).
-        Formula: (total_words - unique_words) / total_words  →  inverse of TTR.
-        Unlike raw TTR this is framed as a *repetition* measure (higher = more repetition).
+        Compute word repetition rate: 1 - TTR (type-token ratio).
+        Higher value → more repetition, relevant for OCD rumination and
+        disorganized thought in schizophrenia.
         """
         words = self._tokenize(text)
         if not words:
@@ -666,10 +677,122 @@ class LexiconLevelFeatures:
         unique = len(set(words))
         return round(1.0 - unique / len(words), 4)
 
+    def _compute_pos_frequencies(self, text: str) -> Dict[str, float]:
+        """
+        POS-based frequency ratios:
+        - prep    (ADP):          prepositions
+        - auxverb (AUX):          auxiliary verbs
+        - adverb  (ADV):          adverbs
+        - conj    (CCONJ/SCONJ):  conjunctions
+        """
+        doc    = _get_nlp()(text)
+        tokens = [t for t in doc if t.is_alpha]
+        if not tokens:
+            return {"prep": 0.0, "auxverb": 0.0, "adverb": 0.0, "conj": 0.0}
+        total = len(tokens)
+        return {
+            "prep":    round(sum(1 for t in tokens if t.pos_ == "ADP")              / total, 4),
+            "auxverb": round(sum(1 for t in tokens if t.pos_ == "AUX")              / total, 4),
+            "adverb":  round(sum(1 for t in tokens if t.pos_ == "ADV")              / total, 4),
+            "conj":    round(sum(1 for t in tokens if t.pos_ in ("CCONJ", "SCONJ")) / total, 4),
+        }
+
+    def _compute_extended_pos(self, text: str) -> Dict[str, float]:
+        """Extended POS frequencies: noun, verb, adjective, interjection."""
+        doc    = _get_nlp()(text)
+        tokens = [t for t in doc if t.is_alpha]
+        if not tokens:
+            return {"noun": 0.0, "verb": 0.0, "adjective": 0.0, "interjection": 0.0}
+        total = len(tokens)
+        return {
+            "noun":         round(sum(1 for t in tokens if t.pos_ == "NOUN") / total, 4),
+            "verb":         round(sum(1 for t in tokens if t.pos_ == "VERB") / total, 4),
+            "adjective":    round(sum(1 for t in tokens if t.pos_ == "ADJ")  / total, 4),
+            "interjection": round(sum(1 for t in tokens if t.pos_ == "INTJ") / total, 4),
+        }
+
+    def _compute_morphological_features(self, text: str) -> Dict[str, float]:
+        """
+        Morphological features from spaCy token.morph:
+        - indicative_ratio:  proportion of verbs in indicative mood  (certainty)
+        - subjunctive_ratio: proportion of verbs in subjunctive/conditional mood (hypotheticality)
+        - singular_ratio:    proportion of singular nouns (isolation proxy)
+        - plural_ratio:      proportion of plural nouns
+        """
+        doc   = _get_nlp()(text)
+        verbs = [t for t in doc if t.pos_ in ("VERB", "AUX")]
+        nouns = [t for t in doc if t.pos_ in ("NOUN", "PROPN")]
+
+        result = {
+            "indicative_ratio":  0.0,
+            "subjunctive_ratio": 0.0,
+            "singular_ratio":    0.0,
+            "plural_ratio":      0.0,
+        }
+
+        if verbs:
+            total_v = len(verbs)
+            result["indicative_ratio"]  = round(
+                sum(1 for t in verbs if "Ind" in t.morph.get("Mood")) / total_v, 4)
+            result["subjunctive_ratio"] = round(
+                sum(1 for t in verbs
+                    if t.morph.get("Mood") and t.morph.get("Mood")[0] in ("Sub", "Cnd")) / total_v, 4)
+
+        if nouns:
+            total_n = len(nouns)
+            result["singular_ratio"] = round(
+                sum(1 for t in nouns if "Sing" in t.morph.get("Number")) / total_n, 4)
+            result["plural_ratio"]   = round(
+                sum(1 for t in nouns if "Plur" in t.morph.get("Number")) / total_n, 4)
+
+        return result
+
+    def _compute_dependency_features(self, text: str) -> Dict[str, float]:
+        """
+        Dependency tree features averaged across sentences:
+        - nsubj_rate: subjects per sentence (agentivity)
+        - dobj_rate:  direct objects per sentence (thought transitivity)
+        """
+        doc       = _get_nlp()(text)
+        sentences = list(doc.sents)
+        if not sentences:
+            return {"nsubj_rate": 0.0, "dobj_rate": 0.0}
+
+        nsubj_counts = [sum(1 for t in sent if t.dep_ == "nsubj")           for sent in sentences]
+        dobj_counts  = [sum(1 for t in sent if t.dep_ in ("dobj", "obj"))   for sent in sentences]
+
+        return {
+            "nsubj_rate": round(float(np.mean(nsubj_counts)), 4),
+            "dobj_rate":  round(float(np.mean(dobj_counts)),  4),
+        }
+
+    def _compute_ner_features(self, text: str) -> Dict[str, float]:
+        """
+        Named Entity Recognition features (normalised over total tokens):
+        - person_ref_rate:   references to people (social isolation proxy)
+        - temporal_ref_rate: DATE + TIME entities (temporal orientation)
+        """
+        doc          = _get_nlp()(text)
+        total_tokens = len([t for t in doc if t.is_alpha])
+        if total_tokens == 0:
+            return {"person_ref_rate": 0.0, "temporal_ref_rate": 0.0}
+
+        person_count   = sum(1 for ent in doc.ents if ent.label_ == "PERSON")
+        temporal_count = sum(1 for ent in doc.ents if ent.label_ in ("DATE", "TIME"))
+
+        return {
+            "person_ref_rate":   round(person_count   / total_tokens, 4),
+            "temporal_ref_rate": round(temporal_count / total_tokens, 4),
+        }
+
+    # ------------------------------------------------------------------
+    # Temporal / window features
+    # ------------------------------------------------------------------
+
     def extract_temporal_features(self, texts: List[str], window_size: int = 5) -> np.ndarray:
         temporal_features = []
         for i in range(0, len(texts) - window_size + 1):
-            window_texts = texts[i:i + window_size]
+            window_texts   = texts[i:i + window_size]
             window_markers = [self.extract_markers(t) for t in window_texts]
             temporal_features.append(self._compute_window_statistics(window_markers))
         return np.array(temporal_features)
@@ -683,149 +806,44 @@ class LexiconLevelFeatures:
             features.extend([np.mean(vals), np.std(vals), np.max(vals) - np.min(vals)])
         return np.array(features)
 
-    def _compute_pos_frequencies(self, text: str) -> Dict[str, float]:
-        """
-        Compute POS-based frequency ratios using spaCy.
-        - prep    (ADP):          prepositions — linked to concreteness/spatial thinking
-        - auxverb (AUX):          auxiliary verbs — modal uncertainty, tense framing
-        - adverb  (ADV):          adverbs — intensity, hedging
-        - conj    (CCONJ/SCONJ):  conjunctions — discourse complexity
-        """
-        doc = nlp(text)
-        tokens = [t for t in doc if t.is_alpha]
-        if not tokens:
-            return {"prep": 0.0, "auxverb": 0.0, "adverb": 0.0, "conj": 0.0}
-        total = len(tokens)
-        return {
-            "prep":    round(sum(1 for t in tokens if t.pos_ == "ADP")              / total, 4),
-            "auxverb": round(sum(1 for t in tokens if t.pos_ == "AUX")              / total, 4),
-            "adverb":  round(sum(1 for t in tokens if t.pos_ == "ADV")              / total, 4),
-            "conj":    round(sum(1 for t in tokens if t.pos_ in ("CCONJ", "SCONJ")) / total, 4),
-        }
 
-    def _compute_extended_pos(self, text: str) -> Dict[str, float]:
-        """
-        Extended POS frequencies: noun, verb, adjective, interjection.
-        """
-        doc = nlp(text)
-        tokens = [t for t in doc if t.is_alpha]
-        if not tokens:
-            return {"noun": 0.0, "verb": 0.0, "adjective": 0.0, "interjection": 0.0}
-        total = len(tokens)
-        return {
-            "noun":         round(sum(1 for t in tokens if t.pos_ == "NOUN")  / total, 4),
-            "verb":         round(sum(1 for t in tokens if t.pos_ == "VERB")  / total, 4),
-            "adjective":    round(sum(1 for t in tokens if t.pos_ == "ADJ")   / total, 4),
-            "interjection": round(sum(1 for t in tokens if t.pos_ == "INTJ")  / total, 4),
-        }
-
-    def _compute_morphological_features(self, text: str) -> Dict[str, float]:
-        """
-        Morphological features from spaCy token.morph:
-        - indicative_ratio: proportion of verbs in indicative mood (certainty)
-        - subjunctive_ratio: proportion of verbs in subjunctive/conditional mood (hypotheticality)
-        - singular_ratio: proportion of singular nouns (isolation vs collectivity)
-        - plural_ratio: proportion of plural nouns
-        """
-        doc = nlp(text)
-        verbs = [t for t in doc if t.pos_ in ("VERB", "AUX")]
-        nouns = [t for t in doc if t.pos_ in ("NOUN", "PROPN")]
-
-        result = {"indicative_ratio": 0.0, "subjunctive_ratio": 0.0,
-                  "singular_ratio": 0.0, "plural_ratio": 0.0}
-
-        if verbs:
-            total_v = len(verbs)
-            result["indicative_ratio"]  = round(sum(1 for t in verbs if "Ind" in t.morph.get("Mood")) / total_v, 4)
-            result["subjunctive_ratio"] = round(sum(1 for t in verbs if t.morph.get("Mood") and
-                                                    t.morph.get("Mood")[0] in ("Sub", "Cnd")) / total_v, 4)
-
-        if nouns:
-            total_n = len(nouns)
-            result["singular_ratio"] = round(sum(1 for t in nouns if "Sing" in t.morph.get("Number")) / total_n, 4)
-            result["plural_ratio"]   = round(sum(1 for t in nouns if "Plur" in t.morph.get("Number")) / total_n, 4)
-
-        return result
-
-    def _compute_dependency_features(self, text: str) -> Dict[str, float]:
-        """
-        Dependency tree features per sentence (averaged across sentences):
-        - nsubj_rate: subjects per sentence (agentivity)
-        - dobj_rate:  direct objects per sentence (thought transitivity)
-        """
-        doc = nlp(text)
-        sentences = list(doc.sents)
-        if not sentences:
-            return {"nsubj_rate": 0.0, "dobj_rate": 0.0}
-
-        nsubj_counts = [sum(1 for t in sent if t.dep_ == "nsubj") for sent in sentences]
-        dobj_counts  = [sum(1 for t in sent if t.dep_ in ("dobj", "obj")) for sent in sentences]
-
-        return {
-            "nsubj_rate": round(float(np.mean(nsubj_counts)), 4),
-            "dobj_rate":  round(float(np.mean(dobj_counts)),  4),
-        }
-
-    def _compute_ner_features(self, text: str) -> Dict[str, float]:
-        """
-        Named Entity Recognition features (normalized over total tokens):
-        - person_ref_rate:    references to people (social isolation proxy)
-        - temporal_ref_rate:  DATE + TIME entities (temporal orientation)
-        """
-        doc = nlp(text)
-        total_tokens = len([t for t in doc if t.is_alpha])
-        if total_tokens == 0:
-            return {"person_ref_rate": 0.0, "temporal_ref_rate": 0.0}
-
-        person_count   = sum(1 for ent in doc.ents if ent.label_ == "PERSON")
-        temporal_count = sum(1 for ent in doc.ents if ent.label_ in ("DATE", "TIME"))
-
-        return {
-            "person_ref_rate":   round(person_count   / total_tokens, 4),
-            "temporal_ref_rate": round(temporal_count / total_tokens, 4),
-        }
-    
-
-
-
-
+# ---------------------------------------------------------------------------
+# Utility functions
+# ---------------------------------------------------------------------------
 
 def get_test_pvalues(group1_counts, group2_counts, alternative='two-sided'):
     """
     Args:
-        group1_counts (list/array): Conteggi del primo gruppo
-        group2_counts (list/array): Conteggi del secondo gruppo
-        alternative (str): 'greater', 'less' o 'two-sided'
+        group1_counts (list/array): Counts for the first group
+        group2_counts (list/array): Counts for the second group
+        alternative (str): 'greater', 'less', or 'two-sided'
     """
-    # T-test 
     _, p_value_ttest = stats.ttest_ind(group1_counts, group2_counts, alternative=alternative)
-    
-    # Mann-Whitney U
-    _, p_value_mw = stats.mannwhitneyu(group1_counts, group2_counts, alternative=alternative)
-    
+    _, p_value_mw    = stats.mannwhitneyu(group1_counts, group2_counts, alternative=alternative)
     return p_value_ttest, p_value_mw
+
 
 def create_clean_boxplot_save(data1, data2, filename, labels=None):
     if labels is None:
         labels = ['Depressed', 'Controls']
-    
+
     plt.figure(figsize=(4, 3))
     sns.set_style("white")
-    
-    ax = sns.boxplot(data=[data1, data2], width=0.6, fliersize=5, linewidth=0, palette=['#A8D5BA', '#6D8A9A'])
+
+    ax = sns.boxplot(data=[data1, data2], width=0.6, fliersize=5,
+                     linewidth=0, palette=['#A8D5BA', '#6D8A9A'])
     sns.stripplot(data=[data1, data2], jitter=True, alpha=0.5, size=7, color='#555555')
-    
+
     plt.xticks([0, 1], labels)
     plt.ylabel('')
     plt.title('')
-    
+
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.tick_params(left=False, bottom=False)
-    #ax.set(yticks=[])
-    
+
     plt.tight_layout()
     plt.savefig(filename)
     plt.show()
