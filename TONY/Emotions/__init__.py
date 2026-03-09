@@ -1,7 +1,7 @@
-from .Emotions_Predictor import * 
-from .EmotionProfiler import *
+from .emotions_predictions import * 
+from .emotional_profile import *
 try:
-    from .Emotions_Predictor_mlx import *  # solo Apple Silicon
+    from .emotions_predictions_mlx import *  # solo Apple Silicon
 except ImportError:
     pass
 
