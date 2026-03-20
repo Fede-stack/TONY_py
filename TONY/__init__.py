@@ -11,4 +11,5 @@ from . import SAE
 from . import retrieval
 from . import viz
 from . import Emotions
+from . import COGNITIVE
 
