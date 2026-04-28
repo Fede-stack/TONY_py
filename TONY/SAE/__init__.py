@@ -1,3 +1,4 @@
 # TONY/SAE/__init__.py
-from .saeinterpreter import *
+from .SAEinterpreter import SAEInterpreter
 
+__all__ = ['SAEInterpreter']
