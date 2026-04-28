@@ -59,8 +59,7 @@ from keybert import KeyBERT
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import KMeans
 
-from llm_labeler import BaseLLMLabeler
-
+from .llm_labeler import BaseLLMLabeler
 
 # ──────────────────────────────────────────────────────────────────────────────
 #  Colour palette (one per cluster, wraps around)
@@ -447,7 +446,7 @@ class visualize_topics:
           self.adaptive_umap   : AdaptiveUMAP instance (for inspection)
           self.X_umap          : the high-dim embedding (n × d), reused by UMAP 2D
         """
-        from adaptive_umap import AdaptiveUMAP
+        from .adaptive_umap import AdaptiveUMAP
 
         au = AdaptiveUMAP(**self.adaptive_umap_params)
         self.labels = au.fit(self.embeddings, n_clusters=self.n_clusters)
@@ -513,7 +512,7 @@ class visualize_topics:
         - k* reused from AdaptiveUMAP if already computed (adaptive_umap backend),
           otherwise estimated fresh from the embeddings
         """
-        from adaptive_umap import (
+        from .adaptive_umap import (
             _return_ids_kstar_binomial,
             _adaptive_fuzzy_graph,
             _simplicial_set_embedding,
