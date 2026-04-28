@@ -90,15 +90,15 @@ The **SAE Interpreter** module provides interpretable latent feature analysis us
 ```python
 from TONY.SAE import SAEInterpreter
 
-text = 'Some days I keep living, even though I feel completely alone in the world'
-interpreter = SAEInterpreter()
-result = interpreter.interpret(text, top_k=10)
-interpreter.plot_interpretation(result)
+interpreter = SAEInterpreter(
+    hf_token       = 'hf_...',
+    openrouter_key = "sk..."
+)
 
-# Feature #25 activated
-# This feature captures posts that involve questioning or describing
-# unusual perceptual experiences, often related to dissociation or
-# altered states of consciousness.
+result = interpreter("I can't stop crying and I don't even know why", top_k = 3)
+print(result)
+
+{'text': "I can't stop crying and I don't even know why", 'features': [{'feature_id': 762, 'score': 17.2355, 'label': 'The feature represents the inability to cry or the experience of uncontrollable, spontaneous crying.', 'rank': 1}, {'feature_id': 3469, 'score': 2.9722, 'label': 'The feature represents the conceptualization and regulation of emotions as distinct from logical or cognitive processes.', 'rank': 2}, {'feature_id': 5752, 'score': 2.6321, 'label': "The feature represents the meta-cognitive evaluation of one's own thoughts as irrational, logical, or reasonable.", 'rank': 3}]}
 ```
 
 ---
@@ -107,11 +107,11 @@ Additionally, you can visualize the documents into clusters of topics. Following
 
 
 ```python
-from TONY.viz import visualize_topics
-
-clusterer = visualize_topics(n_clusters=5)
-clusterer.fit(list(texts))
-clusterer.plot()
+labeler = MLXLabeler("mlx-community/Qwen3.5-0.8B")
+model   = visualize_topics(n_clusters=5, llm_labeler=labeler,
+                           clustering_backend="adaptive_umap")
+model.fit(texts)
+model.plot("")
 ```
 
  <br><br>
