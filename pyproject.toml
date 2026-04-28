@@ -22,6 +22,7 @@ dependencies = [
     "keybert",
     "textblob",
     "NRCLex==3.0.0",
+    "nbformat>=4.2.0",
     "umap-learn",
     "datasets",
     "accelerate",
