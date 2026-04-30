@@ -540,7 +540,7 @@ class visualize_topics:
             self.embeddings,
             W_sym,
             n_components=2,
-            random_state=42,
+            random_state=0,
         )
 
     def _build_hover_strings(self):
