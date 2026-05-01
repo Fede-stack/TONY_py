@@ -115,7 +115,7 @@ model.plot("")
 ```
 
  <br><br>
-<img src="https://github.com/Fede-stack/TONY_py/blob/main/images/cluster_viz_.png" alt="" width="400">
+<img src="https://github.com/Fede-stack/TONY_py/blob/main/images/topic_viz.png" alt="" width="700">
 
 
 ---
