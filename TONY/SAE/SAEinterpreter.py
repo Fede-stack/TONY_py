@@ -73,8 +73,8 @@ class SAEInterpreter:
         openrouter_key = 'sk-or-...',
     )
 
-    # Single text, default SAE (SAE32)
-    result = interpreter("I haven't left my bed in three days")
+    # Single text, default SAE (SAE64)
+    result = interpreter("I haven't left my bed in three days", sae='SAE64')
 
     # Specify SAE
     result = interpreter("I haven't left my bed", sae='SAE64')
@@ -320,7 +320,7 @@ class SAEInterpreter:
         self,
         texts:      Union[str, list],
         top_k:      int              = 3,
-        sae:        Union[SAEName, Literal['all']] = 'SAE32',
+        sae:        Union[SAEName, Literal['all']] = 'SAE64',
         batch_size: int              = 32,
     ) -> Union[dict, list]:
         """
@@ -330,7 +330,7 @@ class SAEInterpreter:
         top_k      : features to return per text per SAE (default 3)
         sae        : 'SAE16' | 'SAE32' | 'SAE64' | 'all'
                      If 'all', returns features from all 3 SAEs merged
-                     and re-ranked by score. Default: 'SAE32'
+                     and re-ranked by score. Default: 'SAE64'
         batch_size : batch size for the embedding API
 
         Returns
@@ -341,7 +341,7 @@ class SAEInterpreter:
         Dict structure (single SAE):
         {
             'text': str,
-            'sae': 'SAE32',
+            'sae': 'SAE64',
             'features': [
                 {'rank': 1, 'score': float, 'feature_id': int,
                  'label': str, 'sae': str},
