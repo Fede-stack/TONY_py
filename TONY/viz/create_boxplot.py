@@ -10,8 +10,8 @@ class test_hypothesis:
         self.labels = labels or ['Depressed', 'Controls']
         self.palette = palette or ['#A8D5BA', '#6D8A9A']
 
-    def plot(self, data1, data2, filename):
-        stat, pvalue = stats.mannwhitneyu(data1, data2, alternative='two-sided')
+    def plot(self, data1, data2, filename, alternative='two-sided'):
+        stat, pvalue = stats.mannwhitneyu(data1, data2, alternative)
         pval_str = self._pval_str(pvalue)
 
         fig, ax = plt.subplots(figsize=(4, 4))
