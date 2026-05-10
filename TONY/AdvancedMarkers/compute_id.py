@@ -56,7 +56,7 @@ try:
 except ImportError:
     pass
 
-from ABIDE import ABIDE   
+from .ABIDE import ABIDE   
 
 
 # ─────────────────────────────────────────────────────────────────────────────
