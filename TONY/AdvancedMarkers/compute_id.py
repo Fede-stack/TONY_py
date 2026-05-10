@@ -56,7 +56,7 @@ try:
 except ImportError:
     pass
 
-from ABIDE import ABIDE   # adjust the import path to your package layout
+from ABIDE import ABIDE   
 
 
 # ─────────────────────────────────────────────────────────────────────────────
