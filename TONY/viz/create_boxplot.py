@@ -7,7 +7,7 @@ import seaborn as sns
 class test_hypothesis:
 
     def __init__(self, labels=None, palette=None):
-        self.labels = labels or ['Depressed', 'Controls']
+        self.labels = labels or ['Patients', 'Controls']
         self.palette = palette or ['#A8D5BA', '#6D8A9A']
 
     def plot(self, data1, data2, filename, alternative='two-sided'):
