@@ -68,9 +68,9 @@ class test_hypothesis:
     def _pval_str(self, pvalue):
         if pvalue < 0.001:
             return "p < 0.001 ***"
-        elif pvalue < 0.01:
-            return f"p = {pvalue:.3f} **"
         elif pvalue < 0.05:
+            return f"p = {pvalue:.3f} **"
+        elif pvalue < 0.1:
             return f"p = {pvalue:.3f} *"
         else:
             return f"p = {pvalue:.3f} (n.s.)"
