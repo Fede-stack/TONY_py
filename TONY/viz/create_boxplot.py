@@ -11,7 +11,7 @@ class test_hypothesis:
         self.palette = palette or ['#A8D5BA', '#6D8A9A']
 
     def plot(self, data1, data2, filename, alternative='two-sided'):
-        stat, pvalue = stats.mannwhitneyu(data1, data2, alternative)
+        stat, pvalue = stats.mannwhitneyu(data1, data2, alternative = alternative)
         pval_str = self._pval_str(pvalue)
 
         fig, ax = plt.subplots(figsize=(4, 4))
