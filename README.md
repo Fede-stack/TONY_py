@@ -85,7 +85,7 @@ If you are working with an Apple Silicon Mac (M1/M2/M3/M4 chip), you can run the
 
 ---
 
-The **SAE Interpreter** module provides interpretable latent feature analysis using a Sparse Autoencoder (SAE) trained on 710,000 Reddit posts spanning from casual conversation to mental health-focused communities. Given an input text, the model identifies the most strongly activated latent features, each of which is automatically described in natural language, capturing the psychological and semantic content expressed in the text.
+The **SAE Interpreter** module provides interpretable latent feature analysis using a Sparse Autoencoder (SAE) trained on thousands of Reddit posts spanning from casual conversation to mental health-focused communities. Given an input text, the model identifies the most strongly activated latent features, each of which is automatically described in natural language, capturing the psychological and semantic content expressed in the text.
 
 ```python
 from TONY.SAE import SAEInterpreter
